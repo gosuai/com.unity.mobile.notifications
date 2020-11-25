@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import ai.gosu.dataplatform.sdk.GDP;
+
 public class UnityNotificationManager extends BroadcastReceiver {
     protected static NotificationCallback mNotificationCallback;
     protected static UnityNotificationManager mUnityNotificationManager;
@@ -363,6 +365,9 @@ public class UnityNotificationManager extends BroadcastReceiver {
         long repeatInterval = intent.getLongExtra("repeatInterval", 0L);
         long fireTime = intent.getLongExtra("fireTime", 0L);
 
+        GDP.event("unity-notification-schedule")
+                .putBundle("intentExtras", intent.getExtras())
+                .record();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
         if (repeatInterval <= 0) {
@@ -474,11 +479,13 @@ public class UnityNotificationManager extends BroadcastReceiver {
 
     // Cancel a previously shown notification by id.
     public void cancelDisplayedNotification(int id) {
+        GDP.event("unity-notification-cancel").putParam("notificationId", id).record();
         getNotificationManager().cancel(id);
     }
 
     // Cancel all previously shown notifications.
     public void cancelAllNotifications() {
+        GDP.event("unity-notification-cancel-all").record();
         getNotificationManager().cancelAll();
     }
 
@@ -499,6 +506,7 @@ public class UnityNotificationManager extends BroadcastReceiver {
         Notification.Builder notificationBuilder = UnityNotificationManager.buildNotification(context, intent);
         int id = intent.getIntExtra("id", -1);
 
+        notificationBuilder.setDeleteIntent(GDP.getInstance().createDeleteIntent(id));
         UnityNotificationManager.notify(context, id, notificationBuilder.build(), intent);
     }
 
@@ -629,6 +637,10 @@ public class UnityNotificationManager extends BroadcastReceiver {
 
     // Call the system notification service to notify the notification.
     protected static void notify(Context context, int id, Notification notification, Intent intent) {
+        GDP.event("unity-notification-notify")
+                .putParam("notificationId", id)
+                .putNotification(notification)
+                .record();
         getNotificationManager(context).notify(id, notification);
 
         try {
