@@ -1,1 +1,5 @@
+include ":sdk"
+include ":fcm"
 include ':androidnotifications'
+project(':sdk').projectDir=new File('../../ai.gosu.gdp.test/sdk')
+project(':fcm').projectDir=new File('../../ai.gosu.gdp.test/fcm')

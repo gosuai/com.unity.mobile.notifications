@@ -67,7 +67,7 @@ namespace Unity.Notifications.Android
 
             AndroidJavaClass managerClass = new AndroidJavaClass("com.unity.androidnotifications.UnityNotificationManager");
 
-            s_NotificationManager = managerClass.CallStatic<AndroidJavaObject>("getNotificationManagerImpl", context, activity);
+            s_NotificationManager = managerClass.CallStatic<AndroidJavaObject>("getNotificationManagerImpl", context, activity, null);
             s_NotificationManager.Call("setNotificationCallback", new NotificationCallback());
 
             s_Initialized = true;

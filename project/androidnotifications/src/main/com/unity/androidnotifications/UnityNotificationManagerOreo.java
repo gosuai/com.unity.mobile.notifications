@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UnityNotificationManagerOreo extends UnityNotificationManager {
-    public UnityNotificationManagerOreo(Context context, Activity activity) {
-        super(context, activity);
+    public UnityNotificationManagerOreo(Context context, Activity activity, Class openActivity) {
+        super(context, activity, openActivity);
     }
 
     @Override

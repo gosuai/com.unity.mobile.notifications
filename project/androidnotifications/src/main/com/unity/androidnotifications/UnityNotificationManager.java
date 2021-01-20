@@ -50,13 +50,14 @@ public class UnityNotificationManager extends BroadcastReceiver {
     }
 
     // Called from Unity managed code to do initialization.
-    public UnityNotificationManager(Context context, Activity activity) {
+    public UnityNotificationManager(Context context, Activity activity, Class openActivity) {
         super();
         mContext = context;
         mActivity = activity;
+        mOpenActivity = openActivity;
 
         try {
-            ApplicationInfo ai = activity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
+            ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
             Bundle bundle = ai.metaData;
 
             Boolean rescheduleOnRestart = bundle.getBoolean("reschedule_notifications_on_restart");
@@ -72,7 +73,8 @@ public class UnityNotificationManager extends BroadcastReceiver {
 
             this.mRescheduleOnRestart = rescheduleOnRestart;
 
-            mOpenActivity = UnityNotificationUtilities.getOpenAppActivity(context, false);
+            if (mOpenActivity == null)
+                mOpenActivity = UnityNotificationUtilities.getOpenAppActivity(context, false);
             if (mOpenActivity == null)
                 mOpenActivity = activity.getClass();
         } catch (PackageManager.NameNotFoundException e) {
@@ -83,18 +85,18 @@ public class UnityNotificationManager extends BroadcastReceiver {
     }
 
     public static UnityNotificationManager getNotificationManagerImpl(Context context) {
-        return getNotificationManagerImpl(context, (Activity) context);
+        return getNotificationManagerImpl(context, (Activity) context, null);
     }
 
     // Called from managed code.
-    public static UnityNotificationManager getNotificationManagerImpl(Context context, Activity activity) {
+    public static UnityNotificationManager getNotificationManagerImpl(Context context, Activity activity, Class openActivity) {
         if (mUnityNotificationManager != null)
             return mUnityNotificationManager;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mUnityNotificationManager = new UnityNotificationManagerOreo(context, activity);
+            mUnityNotificationManager = new UnityNotificationManagerOreo(context, activity, openActivity);
         } else {
-            mUnityNotificationManager = new UnityNotificationManager(context, activity);
+            mUnityNotificationManager = new UnityNotificationManager(context, activity, openActivity);
         }
 
         return mUnityNotificationManager;
@@ -366,6 +368,8 @@ public class UnityNotificationManager extends BroadcastReceiver {
         long fireTime = intent.getLongExtra("fireTime", 0L);
 
         GDP.event("unity-notification-schedule")
+                .putParam("intentClassName", intent.getComponent().getClassName())
+                .putParam("intentPackageName", intent.getComponent().getPackageName())
                 .putBundle("intentExtras", intent.getExtras())
                 .record();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -492,6 +496,7 @@ public class UnityNotificationManager extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
+            Log.i("UnityNotifications", String.format("onReceive %s %s", intent, intent.getExtras()));
             if (!intent.hasExtra("channelID") || !intent.hasExtra("smallIconStr"))
                 return;
 
@@ -563,8 +568,7 @@ public class UnityNotificationManager extends BroadcastReceiver {
             }
 
             boolean groupSummary = intent.getBooleanExtra("groupSummary", false);
-            if (groupSummary)
-                notificationBuilder.setGroupSummary(groupSummary);
+            notificationBuilder.setGroupSummary(groupSummary);
 
             String sortKey = intent.getStringExtra("sortKey");
             if (sortKey != null && sortKey.length() > 0) {

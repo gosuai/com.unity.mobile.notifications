@@ -55,7 +55,7 @@ public class UnityNotificationUtilities {
         return intent;
     }
 
-    protected static Class<?> getOpenAppActivity(Context context, boolean fallbackToDefault) {
+    public static Class<?> getOpenAppActivity(Context context, boolean fallbackToDefault) {
         ApplicationInfo ai = null;
         try {
             ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
